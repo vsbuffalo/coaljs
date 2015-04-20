@@ -41,14 +41,15 @@ function GeneologyTree(tree, options) {
     };
     total_time(tree); // get total time by recursing tree
     
-    function nodes(node) {
+    function nodes() {
 	// Get all nodes in a nice array. This has side effects: it will append
 	// slots.
-	var _nodes = [], depth = 0;
+	var _nodes = [], depth = 0, center = 0.5;
 	var get_nodes = function(node, slots, is_left) {
 	    node.is_left = is_left;
 	    node.slots = slots.slice(0);
 	    node.depth = depth;
+	    node.y = typeof node.time === 'undefined' ? 0 : node.time / t_time;
 	    _nodes.push(node);
 	    if (node.children) {
 		depth++;
@@ -57,10 +58,14 @@ function GeneologyTree(tree, options) {
 		// get the nodes for left and right children
 		var left = node.children[0]; 
 		var right = node.children[1]; 
+		center = center/2;
+		left.x = node.x - center;
+		right.x = node.x + center;
 		get_nodes(left, slots.splice(0, countLeaves(left)), true);
 		get_nodes(right, slots.splice(0, countLeaves(right)), false);
 	    }
 	};
+	tree.x = 0.5;
 	get_nodes(tree, range(0, countLeaves(tree)-1), null);
 	return _nodes;
     };

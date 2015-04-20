@@ -19,11 +19,12 @@ function sampleArrayWithoutReplacement(x, n) {
 
 function CoalescentGeneology(k) {
     var geno = [], samples = range(0, k-1).map(function(o) {return {name: o};});
-    var coal, coal_times =
+    var coal, coal_time = 0, coal_times =
 	    range(2, k).map(function(i) { return Dist.exp(i*(i-1)/2); });
     // draw two lineages two coalesce, and pop up a coalescent time for them
     while (coal_times.length) {
-	coal = {time: coal_times.pop(),
+	coal_time += coal_times.pop()
+	coal = {time: coal_time,
 		children: sampleArrayWithoutReplacement(samples, 2)};
 	samples.push(coal);
     }
@@ -41,13 +42,25 @@ var svg = d3.select("body").append("svg")
 
 
 // Test
-var coal = GeneologyTree(CoalescentGeneology(10)).nodes();
+var coal = CoalescentGeneology(6),
+    nodes = GeneologyTree(coal).nodes();
 var tree = d3.layout.tree();
+
+function xScale(x) {
+    return width*x;
+}
+
+function yScale(y) {
+    return height*y;
+}
+
+
 svg.selectAll("circles")
     .data(GeneologyTree(coal).nodes())
     .enter().append("circle")
-    .attr("cx", function(o) { return 20 + 100*o.x; })
-    .attr("cy", function(o) { return 20 + (1-o.time)*400; }) 
+    .attr("id", function(o) { return "ct" + o.time; })
+    .attr("cx", function(o) { return xScale(o.x); })
+    .attr("cy", function(o) { return height - yScale(o.y); }) 
     .attr("r", "4")
     .style("fill", function(o) {
 	if (o.children)
@@ -56,17 +69,26 @@ svg.selectAll("circles")
     });
 	
 
+svg.selectAll("lines")
+    .data(GeneologyTree(coal).links())
+    .enter().append("line")
+	.attr({
+	    x1: function(n) { return xScale(n.parent.x); },
+	    x2: function(n) { return xScale(n.child.x); },
+	    y1: function(n) { return height - yScale(n.parent.y); },
+	    y2: function(n) { return height - yScale(n.child.y); }
+	})
+	.style("fill", "none")
+	.style("stroke", "gray")
+	.style("stroke-opacity", 0.4);
 
 
-// svg.selectAll("circles")
-//     .data(GeneologyTree(coal).nodes())
-//     .enter().append("circle")
-//     .attr("cx", function(o) { return 20 + 100*o.x; })
-//     .attr("cy", function(o) { return 20 + (1-o.time)*400; }) 
-//     .attr("r", "4")
-//     .style("fill", function(o) {
-// 	if (o.children)
-// 	    return "steelblue";
-// 	return "black";
-//     });
-	
+
+
+
+
+
+
+
+
+
