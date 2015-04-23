@@ -26,44 +26,55 @@ function depth(depth) {
     return tmp;
 }
 
-function GeneologyTree(tree, options) {
+function GenealogyTree(tree, options) {
     if (typeof options === 'undefined')
-	options = {height: 440, width: 440}; // TODO
+	options = {stem:0.1}; // TODO
     // functions for recursing through a tree (nested object) and grabbing all
     // edges and nodes.
     // Coal time parameters
-    var t_time = 0;
-    function total_time(tree) {
-	if (tree.children) {
-	    t_time+= tree.time;
-	    tree.children.forEach(total_time);
+    var t_time = tree.total_time;
+    var max_depth = 0, depth = 0, left_depth, right_depth;
+    function maxDepth(node) {
+	if (node.children) {
+	    node.children[0].depth = node.depth + 1;
+	    node.children[1].depth = node.depth + 1;
+	    left_depth = maxDepth(node.children[0]);
+	    right_depth = maxDepth(node.children[1]);
+    if (left_depth > right_depth)
+		return left_depth + 1;
+	    else
+		return right_depth + 1;
+	} else {
+	    return 0;
 	}
     };
-    total_time(tree); // get total time by recursing tree
-    
+    tree.depth = 1;
+    max_depth = maxDepth(tree); // get total time by recursing tree
+
     function nodes() {
 	// Get all nodes in a nice array. This has side effects: it will append
 	// slots.
-	var _nodes = [], depth = 0, center = 0.5;
+	var _nodes = [], depth = 0, center = 0.5/max_depth,
+	    ymax = t_time/(1-options.stem);
 	var get_nodes = function(node, slots, is_left) {
 	    node.is_left = is_left;
 	    node.slots = slots.slice(0);
-	    node.depth = depth;
-	    node.y = typeof node.time === 'undefined' ? 0 : node.time / t_time;
+	    node.y = typeof node.coal_time==='undefined' ? 0 : node.total_time*0.3;
 	    _nodes.push(node);
 	    if (node.children) {
-		depth++;
 		if (node.children.length != 2)
 		    throw new Error("length children != 2");
 		// get the nodes for left and right children
 		var left = node.children[0]; 
 		var right = node.children[1]; 
-		center = center/2;
-		left.x = node.x - center;
-		right.x = node.x + center;
-		get_nodes(left, slots.splice(0, countLeaves(left)), true);
-		get_nodes(right, slots.splice(0, countLeaves(right)), false);
+		var left_slots = slots.splice(0, countLeaves(left));
+		var right_slots = slots.splice(0, countLeaves(right));
+		left.x = node.x - center/node.depth;
+		right.x = node.x + center/node.depth;
+		get_nodes(left, left_slots, true);
+		get_nodes(right, right_slots, false);
 	    }
+	    //console.log(center);
 	};
 	tree.x = 0.5;
 	get_nodes(tree, range(0, countLeaves(tree)-1), null);
@@ -91,7 +102,7 @@ function GeneologyTree(tree, options) {
 	get_edges(tree);
 	return _edges;
     };
-    return {total_time: t_time, tree: tree, nodes: nodes, links: links};
+    return {max_depth: max_depth, total_time: t_time, tree: tree, nodes: nodes, links: links};
 }
 
 
