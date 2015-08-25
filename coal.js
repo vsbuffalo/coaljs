@@ -186,6 +186,20 @@ var margin = {top: 40, right: 10, bottom: 20, left: 10},
 
 var tree_height = 0.75*height;
 
+function pi(tree) {
+    // TODO: worth testing this a bit more
+    var leaves = tree.leaves,
+	muts = tree.mutations(), pi = 0;
+    for (var i = 0; i < leaves.length; i++) {
+	for (var j = 0; j < i; j++) {
+	    var diff = leaves[j].mutations.filter(function(x) { return leaves[i].mutations.indexOf(x) < 0; }).length + 
+		    leaves[i].mutations.filter(function(x) { return leaves[j].mutations.indexOf(x) < 0; }).length;
+	    pi += (1/(leaves.length-1))*(1/leaves.length)*diff;
+	}
+    }
+    return 2*pi;
+};
+
 function newSim() {
     var svg = d3.select("body").append("svg")
 	    .attr("id", "coalsim")
@@ -317,6 +331,14 @@ function newSim() {
 	d3.selectAll("#"+x.id)
 	    .attr("r", 3);
     });
+
+    d3.selectAll("#stats")
+	.text(function() {
+	    var a = d3.sum(range(1, leaves.length-1).map(function(x) { return 1/x; }));
+	    var str = "summary statistics: S = " + muts.length + ", θ = " + Math.round(100*muts.length/a)/100 + ", π = " + Math.round(100*pi(tree))/100;
+	    return str;
+	});
+    return tree;
 }
 
 newSim();
@@ -327,3 +349,11 @@ d3.select("#refresh").on("click", function() {
     // new simulation
     newSim();
 });
+
+// var pis = [];
+// for (var i = 0; i < 100; i++) {
+//     var tree= newSim();
+//     pis.push(pi(tree));
+// }
+
+// console.log(d3.mean(pis));
